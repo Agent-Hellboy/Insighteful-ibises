@@ -1,13 +1,30 @@
+import datetime
 import hashlib
 import os
+import pathlib
 
 DEV_FILES = [".py", ".cpp", ".ini"]
 MUSIC_FILES = [".mp3"]
 VIDEO_FILES = [".mp4"]
 
 
-# class File:
-#     pass
+class File:
+    """Class for manipulating files"""
+
+    def __init__(self, name: str, path: str, hash: str) -> None:
+        self.name = name
+        self.path = path
+        self.hash = hash
+        self.extension = os.path.splitext(self.name)[-1]
+        self.info = pathlib.Path(self.path)
+
+    def get_last_modified_time(self) -> datetime.datetime:
+        """Returns last modified time as datetime.datetime object"""
+        return datetime.datetime.fromtimestamp(self.info.stat().st_mtime)
+
+    def get_created_time(self) -> datetime.datetime:
+        """Returns created time as datetime.datetime object"""
+        return datetime.datetime.fromtimestamp(self.info.stat().st_ctime)
 
 
 def get_checksum(file_name: str) -> str:
@@ -17,6 +34,7 @@ def get_checksum(file_name: str) -> str:
     content = a_file.read()
     sha_hash.update(content)
     digest = sha_hash.hexdigest()
+    a_file.close()
     return digest
 
 
@@ -38,10 +56,7 @@ def parser(startpath: str) -> tuple:
                 ffile = os.path.join(startpath1, f)
                 if os.path.isfile(ffile):
                     hash = get_checksum(ffile)
-                    file = {}
-                    file["name"] = f
-                    file["hash"] = hash
-                    file["extension"] = os.path.splitext(f)[-1]
+                    file = File(f, ffile, hash)
                     files_lst.append(file)
                     if file_and_hash.get(hash) is None:
                         file_and_hash[hash] = [(root, f)]
@@ -83,19 +98,26 @@ class FileManager:
         """Returns files present in the directory you fired this command"""
         files = []
         for i in self.data[2]:
-            files.append(i["name"])
+            files.append(i)
         return files
 
 
 if __name__ == "__main__":
     input_param = os.getcwd()
     print(input_param)
+    print('\n\n')
     file_mgr = FileManager(input_param)
     pfiles = file_mgr.get_files()
     print(pfiles)
+    print('\n\n')
 
     s = file_mgr.get_directories()
     print(s)
+    print('\n\n')
 
     p = file_mgr.get_dupliacte()
     print(p)
+    print('\n\n')
+
+    print(pfiles[0].get_last_modified_time())
+    print(pfiles[0].get_created_time())
