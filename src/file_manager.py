@@ -91,11 +91,11 @@ class FileManager:
         return files
 
     def get_directories(self) -> list:
-        """Returns list of directories present inside the directory you fired this command"""
+        """Returns list of directories present inside the directory you fired this command from"""
         return self.data[1]
 
     def get_files(self) -> list:
-        """Returns files present in the directory you fired this command"""
+        """Returns files present in the directory you fired this command from"""
         files = []
         for i in self.data[2]:
             files.append(i)
