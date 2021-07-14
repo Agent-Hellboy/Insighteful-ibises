@@ -29,3 +29,8 @@ build/
 .vscode/
 # MacOS
 .DS_Store
+
+# Testing stuff
+test.py
+test/
+tests/
