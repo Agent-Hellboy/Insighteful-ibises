@@ -2,7 +2,17 @@ from __future__ import annotations
 
 from typing import Callable
 
+class CommandNotFound(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
 
+class NotACommand(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
+
+class UnknownKey(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
 class Command:
     """Base class for commands"""
 
@@ -36,7 +46,7 @@ class Command:
                         break
                 else:
                     self.terminal.console.print("Parent command Not Found!")
-                    raise KeyboardInterrupt
+                    raise CommandNotFound
             self.parent.add_subcommand(self)
         self._subcommands: list[Command] = []
         Command.commands.append(self)
@@ -140,10 +150,20 @@ class Command:
                 _options[0].append(key)
             else:
                 self.terminal.console.print(f"Unknown option: {key}")
-                return
+                raise UnknownKey
 
         self.func(self.terminal, _options, params)
 
+    @classmethod
+    def parse(self, command: str) -> Command:
+        arguments = command.split()
+        if self.get_command(arguments[0]).parent != None:
+            raise CommandNotFound
+        for x in range(1, len(arguments)):
+            if self.get_command(arguments[x]).parent != self.get_command(arguments[x-1]):
+                raise CommandNotFound
+        return self.get_command(arguments[-1])
+        
 
 def _test(terminal: None, options: list[list[str], dict[str, str]], params: list[str]) -> None:
     """Test func"""
