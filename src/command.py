@@ -2,17 +2,9 @@ from __future__ import annotations
 
 from typing import Callable
 
-class CommandNotFound(Exception):
-    def __init__(self, *args: object) -> None:
-        super().__init__(*args)
+from .errors import UnknownCommand, UnknownOption
 
-class NotACommand(Exception):
-    def __init__(self, *args: object) -> None:
-        super().__init__(*args)
 
-class UnknownKey(Exception):
-    def __init__(self, *args: object) -> None:
-        super().__init__(*args)
 class Command:
     """Base class for commands"""
 
@@ -46,7 +38,7 @@ class Command:
                         break
                 else:
                     self.terminal.console.print("Parent command Not Found!")
-                    raise CommandNotFound
+                    raise KeyboardInterrupt
             self.parent.add_subcommand(self)
         self._subcommands: list[Command] = []
         Command.commands.append(self)
@@ -149,21 +141,31 @@ class Command:
             elif key.startswith("-") and key in self.options[0]:
                 _options[0].append(key)
             else:
-                self.terminal.console.print(f"Unknown option: {key}")
-                raise UnknownKey
+                raise UnknownOption(f"Unknown Option: {key}")
 
         self.func(self.terminal, _options, params)
 
     @classmethod
     def parse(self, command: str) -> Command:
+        """A Helper method that Parses a str to identify commands in it
+
+        Args:
+            command (str): the str to parse
+
+        Raises:
+            UnknownCommand: If Comand not found
+
+        Returns:
+            Command: The Command object
+        """
         arguments = command.split()
-        if self.get_command(arguments[0]).parent != None:
-            raise CommandNotFound
+        if not self.is_command(arguments[0]) or self.get_command(arguments[0]).parent is not None:
+            raise UnknownCommand(f"Unknown Command: {command}")
         for x in range(1, len(arguments)):
             if self.get_command(arguments[x]).parent != self.get_command(arguments[x-1]):
-                raise CommandNotFound
+                raise UnknownCommand(f"Unknown Command: {command}")
         return self.get_command(arguments[-1])
-        
+
 
 def _test(terminal: None, options: list[list[str], dict[str, str]], params: list[str]) -> None:
     """Test func"""
