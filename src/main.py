@@ -2,16 +2,18 @@ from shlex import split
 
 from rich.console import Console
 
-from src import command
-from src.command import Command
 from templates import main_menu
+
+from . import command
+from .command import Command
+from .errors import InvalidOption, InvalidSyntax
 
 
 class Terminal:
     """The main Application class that handles everything"""
 
     def __init__(self) -> None:
-        self.console = Console()
+        self.console = Console(highlight=False)
         self.running = False
         self.commands = []
         self.NO_PARAM_OPTIONS = [
@@ -31,7 +33,7 @@ class Terminal:
         try:
             words = split(input)
         except ValueError:
-            return {"error": [0, input]}
+            raise InvalidSyntax(f"Invalid syntax: {input}")
         _command = [words[0]]
         words.pop(0)
         _options = {}
@@ -45,7 +47,9 @@ class Terminal:
         for i, word in enumerate(words):
             if word.startswith("--"):
                 if len(_params) != 0:
-                    return {"error": [1, input]}
+                    raise InvalidOption(
+                        f"Parameter before option: '[red bold]{word}[/]' in '[red bold]{input}[/]'"
+                    )
                 if len(words) - 1 != i:
                     _options[word] = words[i + 1]
                     words.pop(i+1)
@@ -53,7 +57,9 @@ class Terminal:
                     _options[word] = ""
             elif word.startswith("-"):
                 if len(_params) != 0:
-                    return {"error": [2, input]}
+                    raise InvalidOption(
+                        f"Parameter before option: '[red bold]{word}[/]' in '[red bold]{input}[/]'"
+                    )
                 if len(word) > 2:
                     _options[word[0:2]] = ""
                     _params.append(word[2:])
@@ -70,17 +76,20 @@ class Terminal:
         Args:
             data (tuple): The data in three parts: Command, options, params
         """
-        command = Command.get_command(data[0][-1])
-        if command is not None:
-            command.run(data[1], data[2])
-            return
-        s = " "
-        self.console.print(f"Unknown Command:{s.join(data[0])}")
+        command = Command.parse(" ".join(data[0]))
+        command.run(data[1], data[2])
 
     def run(self) -> None:
         """Main function that starts the application"""
         main_menu.render(self.console)
         self.running = True
         while self.running:
-            input = self.console.input("> ")
-            self.run_command(self.parse_input(input))
+            try:
+                input = self.console.input("> ")
+                self.run_command(self.parse_input(input))
+            except KeyboardInterrupt:
+                self.console.clear()
+                self.console.print("[red bold]Thanks for using This app :-)")
+                break
+            except Exception as e:
+                self.console.print(e.args[0])

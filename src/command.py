@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Callable
 
+from .errors import UnknownCommand, UnknownOption
+
 
 class Command:
     """Base class for commands"""
@@ -139,10 +141,30 @@ class Command:
             elif key.startswith("-") and key in self.options[0]:
                 _options[0].append(key)
             else:
-                self.terminal.console.print(f"Unknown option: {key}")
-                return
+                raise UnknownOption(f"Unknown Option: {key}")
 
         self.func(self.terminal, _options, params)
+
+    @classmethod
+    def parse(self, command: str) -> Command:
+        """A Helper method that Parses a str to identify commands in it
+
+        Args:
+            command (str): the str to parse
+
+        Raises:
+            UnknownCommand: If Comand not found
+
+        Returns:
+            Command: The Command object
+        """
+        arguments = command.split()
+        if not self.is_command(arguments[0]) or self.get_command(arguments[0]).parent is not None:
+            raise UnknownCommand(f"Unknown Command: {command}")
+        for x in range(1, len(arguments)):
+            if self.get_command(arguments[x]).parent != self.get_command(arguments[x-1]):
+                raise UnknownCommand(f"Unknown Command: {command}")
+        return self.get_command(arguments[-1])
 
 
 def _test(terminal: None, options: list[list[str], dict[str, str]], params: list[str]) -> None:
